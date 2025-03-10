@@ -1,0 +1,169 @@
+import json
+import ollama
+from azure.ai.documentintelligence import DocumentIntelligenceClient
+from azure.core.credentials import AzureKeyCredential
+AZURE_ENDPOINT = "https://liquidmindinvoice.cognitiveservices.azure.com/"
+AZURE_KEY = "Insert key here"
+MODEL_ID = "prebuilt-invoice"  
+file_path = "Add your path"
+
+doc_client = DocumentIntelligenceClient(
+    AZURE_ENDPOINT, AzureKeyCredential(AZURE_KEY))
+def extract_key_values(file_path):
+    try:
+        with open(file_path, "rb") as document:
+            poller = doc_client.begin_analyze_document(
+                MODEL_ID, document_content=document.read()
+            )
+        result = poller.result()
+        # Convert the result to a dictionary
+        extracted_data = {}
+        for kv_pair in result.key_value_pairs:
+            if kv_pair.key and kv_pair.value:
+                extracted_data[kv_pair.key.content] = kv_pair.value.content
+        return extracted_data
+    except Exception as e:
+        print(f"Error in document extraction: {str(e)}")
+        return {"error": str(e)}
+def document_analyzer_agent(extracted_data):
+    prompt = f"""
+    You are a Document Analysis Agent specialized in trade finance documents.
+    Analyze the following extracted data:
+    {json.dumps(extracted_data, indent=2)}
+    Your tasks:
+    1. Identify all missing fields that should be present in a trade finance document
+    2. Highlight critical issues or inconsistencies in the provided data
+    3. Create a structured report of your findings
+    Format your response as JSON with the following structure:
+    {{
+        "missing_fields": ["field1", "field2", ...],
+        "critical_issues": ["issue1", "issue2", ...],
+        "analysis_summary": "detailed summary"
+    }}
+    """
+    response = ollama.chat(
+        model="deepseek-r1:1.5b",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    try:
+        # Get the response content and ensure it's valid JSON
+        response_content = response['message']['content'].strip()
+        if not response_content:
+            return {
+                "missing_fields": [],
+                "critical_issues": ["Failed to get valid response from analyzer"],
+                "analysis_summary": "Analysis failed"
+            }
+        return json.loads(response_content)
+    except (json.JSONDecodeError, KeyError) as e:
+        print(f"Error parsing analyzer response: {str(e)}")
+        print(f"Raw response: {response}")
+        return {
+            "missing_fields": [],
+            "critical_issues": ["Failed to parse analyzer response"],
+            "analysis_summary": "Analysis failed"
+        }
+def compliance_validator_agent(analyzer_output, extracted_data):
+    prompt = f"""
+    You are a Compliance Validation Agent specialized in trade finance regulations.
+    Review the following data and analysis:
+    Extracted Data:
+    {json.dumps(extracted_data, indent=2)}
+    Previous Analysis:
+    {json.dumps(analyzer_output, indent=2)}
+    Your tasks:
+    1. Validate the document against government trade finance guidelines
+    2. Assess compliance risks based on missing fields and critical issues
+    3. Provide compliance recommendations
+    Format your response as JSON with the following structure:
+    {{
+        "compliance_status": "compliant/non-compliant",
+        "risk_assessment": "high/medium/low",
+        "violations": ["violation1", "violation2", ...],
+        "recommendations": ["rec1", "rec2", ...]
+    }}
+    """
+    response = ollama.chat(
+        model="deepseek-r1:1.5b",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    try:
+        response_content = response['message']['content'].strip()
+        if not response_content:
+            return {
+                "compliance_status": "unknown",
+                "risk_assessment": "high",
+                "violations": ["Failed to get valid response from validator"],
+                "recommendations": ["Manual review required"]
+            }
+        return json.loads(response_content)
+    except (json.JSONDecodeError, KeyError) as e:
+        print(f"Error parsing validator response: {str(e)}")
+        print(f"Raw response: {response}")
+        return {
+            "compliance_status": "unknown",
+            "risk_assessment": "high",
+            "violations": ["Failed to parse validator response"],
+            "recommendations": ["Manual review required"]
+        }
+def data_enhancement_agent(validator_output, extracted_data):
+    prompt = f"""
+    You are a Data Enhancement Agent specialized in trade finance documents.
+    Review the following data and compliance analysis:
+    Extracted Data:
+    {json.dumps(extracted_data, indent=2)}
+    Compliance Analysis:
+    {json.dumps(validator_output, indent=2)}
+    Your tasks:
+    1. Suggest possible values for missing fields based on available context
+    2. Provide confidence scores for suggested values
+    3. Recommend additional data sources or verification steps
+    Format your response as JSON with the following structure:
+    {{
+        "suggested_values": {{"field": "value", "confidence": "score"}},
+        "verification_steps": ["step1", "step2", ...],
+        "additional_sources": ["source1", "source2", ...]
+    }}
+    """
+    response = ollama.chat(
+        model="deepseek-r1:1.5b",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    try:
+        response_content = response['message']['content'].strip()
+        if not response_content:
+            return {
+                "suggested_values": {},
+                "verification_steps": ["Failed to get valid response from enhancement agent"],
+                "additional_sources": ["Manual review required"]
+            }
+        return json.loads(response_content)
+    except (json.JSONDecodeError, KeyError) as e:
+        print(f"Error parsing enhancement response: {str(e)}")
+        print(f"Raw response: {response}")
+        return {
+            "suggested_values": {},
+            "verification_steps": ["Failed to parse enhancement response"],
+            "additional_sources": ["Manual review required"]
+        }
+def process_document(file_path):
+    try:
+        print("Extracting key-value pairs using Azure Document Intelligence...")
+        extracted_data = extract_key_values(file_path)
+        print("\n1. Running Document Analyzer Agent...")
+        analyzer_results = document_analyzer_agent(extracted_data)
+        print("\n2. Running Compliance Validator Agent...")
+        validator_results = compliance_validator_agent(analyzer_results, extracted_data)
+        print("\n3. Running Data Enhancement Agent...")
+        enhancement_results = data_enhancement_agent(validator_results, extracted_data)
+        print("\n==== Final Analysis Report ====")
+        print("\nDocument Analysis:")
+        print(json.dumps(analyzer_results, indent=2))
+        print("\nCompliance Validation:")
+        print(json.dumps(validator_results, indent=2))
+        print("\nData Enhancement Suggestions:")
+        print(json.dumps(enhancement_results, indent=2))
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+if __name__ == "__main__":
+    process_document(file_path)
