@@ -1,0 +1,83 @@
+from azure.ai.formrecognizer import DocumentAnalysisClient
+from azure.core.credentials import AzureKeyCredential
+import google.generativeai as genai
+import pypdf
+
+AZURE_ENDPOINT = "https://liquidmindinvoice.cognitiveservices.azure.com/"
+AZURE_KEY = "Add key here"
+
+def extract_details(file_path):
+    try:
+        client = DocumentAnalysisClient(endpoint=AZURE_ENDPOINT, credential=AzureKeyCredential(AZURE_KEY))
+
+        with open(file_path, "rb") as f:
+            poller = client.begin_analyze_document("prebuilt-read", document=f)
+            result = poller.result()
+
+        extracted_data = []
+
+        for page in result.pages:
+            for line in page.lines:
+                text = line.content.strip()
+                extracted_data.append(text)
+
+        return "\n".join(extracted_data)
+
+    except Exception as e:
+        error_message = str(e)
+        if "InvalidContent" in error_message:
+            return {"Error": "The file is corrupted or not in a supported format. Please upload a valid file."}
+        return {"Error": f"An unexpected error occurred: {error_message}"}
+
+
+def generate_llm_response(prompt):
+    """
+    Generates a response using Gemini LLM based on the provided prompt.
+    """
+    genai.configure(api_key="Add gemini key here")
+
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        generation_config={
+            "temperature": 0.4,
+            "top_p": 0.9,
+            "top_k": 40,
+            "max_output_tokens": 2048,
+            "response_mime_type": "text/plain",
+        },
+    )
+
+    chat_session = model.start_chat(history=[])
+    response = chat_session.send_message(prompt)
+
+    response_text = str(response.candidates[0].content).strip()  
+    return response_text
+
+def return_values(extracted_text):
+    
+    # rule_dir = r"add your file path"
+    # try:
+    #     pdf_reader = pypdf.PdfReader(rule_dir)
+    #     text = ""
+    #     for page in pdf_reader.pages:
+    #         text += page.extract_text()
+    
+    # except FileNotFoundError:
+    #     print("The file was not found.")
+    # except Exception as e:
+    #     print(f"Error reading the PDF: {e}")
+
+    prompt = f"""
+    give me the following values from the details provided: Item HSN code return None if unable to identify, amount of transaction, 
+    
+    date, and check for any irregularities from the rules text provided below and return a (bool) value.
+
+    format should be as a dictionary. HSNcode: , amount:, date:, bool: . nothing else should be given. give it as a string not json file
+
+    Here is the extracted text: {extracted_text}
+
+    """#refer to the rules and regulations mentioned in this text {text}
+    
+    response = generate_llm_response(prompt)
+    return response
+
