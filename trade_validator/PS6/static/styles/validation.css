@@ -1,0 +1,155 @@
+/* Validation results styles */
+.validation-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.validation-header {
+    margin-bottom: 2rem;
+}
+
+.validation-header h1 {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.document-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.document-name {
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.document-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.document-status.success {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.document-status.warning {
+    background-color: #fef9c3;
+    color: #854d0e;
+}
+
+.validation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.validation-card {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+}
+
+.validation-card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.ocr-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ocr-field {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background-color: var(--background-color);
+    border-radius: 0.375rem;
+}
+
+.field-label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.field-value {
+    font-weight: 600;
+}
+
+.compliance-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 0.375rem;
+}
+
+.check-item.success {
+    background-color: #dcfce7;
+}
+
+.check-item.warning {
+    background-color: #fef9c3;
+}
+
+.check-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+.check-item.success .check-icon {
+    background-color: #166534;
+    color: white;
+}
+
+.check-item.warning .check-icon {
+    background-color: #854d0e;
+    color: white;
+}
+
+.check-details h3 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.check-details p {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.action-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.action-item p {
+    font-size: 0.875rem;
+    color: #64748b;
+}

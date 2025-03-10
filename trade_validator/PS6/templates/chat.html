@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Bot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/chat.css') }}">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">TradeValidator</div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}" class="active">Home</a>
+            <a href="{{url_for('junk')}}">Login</a>
+            <a href="{{url_for('junk')}}">Sign Up</a>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        </div>
+    </nav>
+
+    <h1>Chat Bot Assistant</h1>
+    <form method="POST" action="/chat">
+        <label for="message">Enter your message:</label>
+        <input type="text" id="message" name="message" required>
+        <button type="submit">Send</button>
+    </form>
+    {% if response %}
+    <div class="response-box">
+        <h2>Chatbot Response:</h2>
+        <p>{{ response }}</p>
+    </div>
+    {% elif error %}
+    <div class="response-box">
+        <h2>Error:</h2>
+        <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
+</body>
+</html>

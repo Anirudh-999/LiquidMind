@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validation Results - Trade Document Validator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/validation.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">TradeValidator</div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('document_upload') }}">Upload</a>
+            <a href="validation-results.html" class="active">Results</a>
+        </div>
+    </nav>
+
+    <p>{{"details"}}</p>
+    <main class="validation-container">
+        <header class="validation-header">
+            <h1>Document Validation Results</h1>
+            <div class="document-info">
+                <span class="document-status success">Validated</span>
+            </div>
+        </header>
+
+        <div class="validation-grid">
+
+            <div class="validation-card">
+                <h2>Compliance Check</h2>
+                <div class="compliance-checks">
+                    <div class="check-item success">
+                        <span class="check-icon">✓</span>
+                        <div class="check-details">
+                            <h3>Document Format</h3>
+                            <p>Valid invoice format detected</p>
+                        </div>
+                    </div>
+                    <div class="check-item warning">
+                        <span class="check-icon">!</span>
+                        <div class="check-details">
+                            <h3>Tax Information</h3>
+                            <p>Tax registration number missing</p>
+                        </div>
+                    </div>
+                    <div class="check-item success">
+                        <span class="check-icon">✓</span>
+                        <div class="check-details">
+                            <h3>Required Fields</h3>
+                            <p>All mandatory fields present</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="validation-card">
+                <h2>Suggested Actions</h2>
+                <div class="action-list">
+                    <div class="feedback-container">
+                        <p>{{ feedback|safe }}</p> 
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 TradeValidator. All rights reserved.</p>
+    </footer>
+
+    <script src="C:\Hack1\static\js\validation.js" type="module"></script>
+</body>
+</html>

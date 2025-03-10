@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validate Your Extracted Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/edit.css') }}">
+
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">TradeValidator</div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('document_upload') }}" >Upload</a>
+        </div>
+    </nav>
+    
+    <div class = "validation-container">
+        <h3>Edit changes if any in your {{ doc_type.replace('_', ' ').title() }}</h3>
+
+    <form id="validationForm" method="post" action="{{ url_for('process_file', doc_type=doc_type, file_name=file_name) }}">
+        <label for="extracted_details"><strong>Edit your extracted details:</strong></label><br>
+        <textarea name="extracted_details" id="extracted_details" required>{{ details }}</textarea><br>
+        <button type="submit" class="btn btn-primary">Validate</button>
+    </form>
+        
+
+    <div id="feedback-section" style="display: none;">
+        <h2>Validation Feedback for {{ file_name }}</h2>
+        <div id="feedback-container" class="feedback-container"></div>
+    </div>
+    </div>
+
+    <script>
+        document.getElementById("validationForm").addEventListener("submit", async function (event) {
+            event.preventDefault();  // Prevent form from reloading the page
+    
+            const formData = new FormData(this);
+            const response = await fetch("", {
+                method: "POST",
+                body: formData,
+            });
+    
+            // No need to parse JSON, just redirect
+            window.location.href = "{{ url_for('show_feedback', doc_type=doc_type) }}"; 
+        });
+    
+        function formatMessageContent(content) {
+            content = content.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>"); 
+            content = content.replace(/\*(.*?)\*/g, "<i>$1</i>");    
+            content = content.replace(/__(.*?)__/g, "<u>$1</u>");    
+    
+            const paragraphs = content.split("\\n").filter(p => p.trim() !== "");
+            return paragraphs.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join("<br>");
+        }
+    </script>
+    
+</body>
+</html>
