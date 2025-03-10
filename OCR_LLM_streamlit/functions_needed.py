@@ -1,7 +1,7 @@
 import google.generativeai as genai
 def oppo(date,operation):
 
-    genai.configure(api_key="AIzaSyDRH41GyshbDyPTILwDItpw6uUvrH4uaKQ")
+    genai.configure(api_key="add your api key")
 
     # Create the model
     generation_config = {
@@ -27,7 +27,7 @@ def oppo(date,operation):
 
 def edit(textalign):
 
-    genai.configure(api_key="AIzaSyDRH41GyshbDyPTILwDItpw6uUvrH4uaKQ")
+    genai.configure(api_key="add your api key")
 
     # Create the model
     generation_config = {
