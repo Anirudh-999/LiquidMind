@@ -1,0 +1,200 @@
+import numpy as np
+import pandas as pd
+from llm_ocr import extract_details
+from llm_ocr import return_values
+from datetime import datetime
+from cryptography.fernet import Fernet
+
+# Training the model ------------------------------------------------------------
+
+learning_rate = 0.01 
+data = r"C:\Users\Anirudh\Desktop\IITM\INTERN\FRAUD\dataset"
+
+def compute_loss(predicted_score, true_label):
+    return (predicted_score - true_label) ** 2
+
+def update_weights(weights, gradients, learning_rate):
+    return [w - learning_rate * g for w, g in zip(weights, gradients)]
+
+def learning():
+    for epoch in range(100):  
+        total_loss = 0
+        gradients = [0] * len(weights) 
+        for data_point in data:
+      
+            features = [
+                data_point["compliance_1"],
+                data_point["compliance_2"],
+                data_point["d_flag"],
+                data_point["check"],
+        ]
+            label = data_point["label"]
+
+        fraud_score = sum(w * f for w, f in zip(weights, features))
+
+        loss = compute_loss(fraud_score, label)
+        total_loss += loss
+
+        for i in range(len(weights)):
+            gradients[i] += 2 * (fraud_score - label) * features[i]
+
+    weights = update_weights(weights, gradients, learning_rate)
+
+# This is for data security --------------------------------------------------------
+
+key = Fernet.generate_key()
+with open("secret.key", "wb") as key_file:
+    key_file.write(key)
+
+def load_key():
+    with open("secret.key", "rb") as key_file:
+        return key_file.read()
+    
+key = load_key()
+cipher = Fernet(key)
+
+# we can customize our encryption 
+sensitive_data = "12345.67"  
+encrypted_data = cipher.encrypt(sensitive_data.encode())
+print(f"Encrypted data: {encrypted_data}")
+
+#-------------------------------------------------------------------------------------
+
+def benfords_law(digits=1):
+    if digits == 1:
+        return np.array([np.log10(1 + 1/d) for d in range(1, 10)])
+    elif digits == 2:
+        return np.array([np.log10(1 + 1/(10*d1 + d2))
+                         for d1 in range(1, 10) for d2 in range(0, 10)])
+
+def extract_first_digit(amount):
+    return int(str(amount).lstrip('0.')[0])
+
+def extract_first_two_digits(amount):
+    return int(str(amount).lstrip('0.').replace('.', '')[:2])
+
+def analyze_dataset(file_path):
+    df = pd.read_csv(file_path)
+    if 'total_open_amount_usd' not in df.columns:
+        raise ValueError("The dataset must contain an 'total_open_amount_usd' column.")
+    
+    amounts = df['total_open_amount_usd']
+    amounts = amounts[amounts > 0] 
+    
+    first_digits = amounts.apply(extract_first_digit)
+    first_two_digits = amounts.apply(extract_first_two_digits)
+
+    observed_counts_1 = first_digits.value_counts().sort_index()
+    observed_counts_2 = first_two_digits.value_counts().sort_index()
+
+    for i in range(1, 10):
+        if i not in observed_counts_1.index:
+            observed_counts_1.loc[i] = 0
+    
+    for i in range(10, 100):
+        if i not in observed_counts_2.index:
+            observed_counts_2.loc[i] = 0
+    
+    observed_counts_1 = observed_counts_1.sort_index()
+    observed_counts_2 = observed_counts_2.sort_index()
+
+    total_amounts = len(amounts)
+    expected_counts_1 = benfords_law(digits=1) * total_amounts
+    expected_counts_2 = benfords_law(digits=2) * total_amounts
+    
+    return observed_counts_1, expected_counts_1, observed_counts_2, expected_counts_2
+
+def validate_invoice(amount, observed_counts_1, expected_counts_1, observed_counts_2, expected_counts_2):
+    first_digit = extract_first_digit(amount)
+    first_two_digits = extract_first_two_digits(amount)
+    
+    total_1 = np.sum(observed_counts_1)
+    total_2 = np.sum(observed_counts_2)
+    
+    prob_1 = benfords_law(digits=1)[first_digit - 1]
+    prob_2 = benfords_law(digits=2)[first_two_digits - 10]
+    
+    print(f"\n--- Invoice Validation Report ---")
+    print(f"Invoice Amount: {amount}")
+    print(f"First Digit: {first_digit}, Probability (Benford's Law): {prob_1:.4f}")
+    print(f"First Digit: {first_two_digits}, Probability (dataset): {prob_2:.4f}")
+    
+    compliance_1 = 100 * (observed_counts_1[first_digit] / total_1) / prob_1
+    compliance_2 = 100 * (observed_counts_2[first_two_digits] / total_2) / prob_2
+    
+    print(f"Compliance Score for First Digit: {compliance_1:.2f}%")
+    print(f"Compliance Score for First Two Digits: {compliance_2:.2f}%")
+    
+    return compliance_1, compliance_2
+
+
+dataset_path = r"C:\Users\Anirudh\Desktop\IITM\INTERN\FRAUD\filtered_data.csv"  
+observed_counts_1, expected_counts_1, observed_counts_2, expected_counts_2 = analyze_dataset(dataset_path)
+
+invoice_path = r"C:\Users\Anirudh\Downloads\invoice check.png"
+
+extract_text = extract_details(invoice_path)
+values = return_values(extract_text)
+
+start_index = values.find(":")
+end_index = values.rfind('"')
+json_str = values[start_index+1:end_index]
+json_str.lstrip('text: ')
+print (json_str)
+data = json_str.split(',')
+print (data)
+for d in data:
+    if "HSNcode" in d:
+        si = d.find(":")+2
+        ei = d.rfind("'")
+        HSNcode = int(d[si:ei])
+    elif "amount" in d:
+        si = d.find(":")+2
+        ei = d.rfind("'")
+        amount = float(d[si:ei])
+    elif "date" in d:
+        si = d.find(":")+2
+        ei = d.rfind("'")
+        date = (d[si:ei])
+    elif "bool" in d:
+        si = d.find(":")+2
+        ei = d.rfind("'")
+        junk= (d[si:ei])
+        if junk == "True":
+            check = 1
+        else:
+            check = 0
+print(HSNcode , amount, date, check, sep=",")
+
+invoice_amount = amount 
+
+date = date.split('/')
+curr_date = datetime.today().date()
+current_date = str(curr_date).split('-')
+d_flag = 0 
+if int(date[2]) > 2000 :
+    junk1 = (int(date[2])- 2000)*12 + date[1]
+    junk2 = (int(current_date[0]-2000))*12 +current_date[1]
+    if junk1 - junk2 > 12:
+        d_flag = 0.5
+    elif junk1-junk2 >36:
+        d_flag = 1 
+
+compliance_1, compliance_2 = validate_invoice(
+    invoice_amount, observed_counts_1, expected_counts_1, observed_counts_2, expected_counts_2)
+
+matrix = [[compliance_1, compliance_2],[d_flag, check]]
+weights = [[0.5,0,5], [0.1,0.1]]
+
+fraud_score = sum(matrix[0][i] * weights[0][i] for i in range(len(matrix[0]))) + \
+              sum(matrix[1][i] * weights[1][i] for i in range(len(matrix[1])))
+
+fraud_threshold = 70 
+
+if fraud_score >= fraud_threshold:
+    print("Fraud detected!")
+else:
+    print("No fraud detected.")
+
+print(f"Fraud Score: {fraud_score:.2f}")
+  
